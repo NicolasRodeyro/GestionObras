@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d \"C:\\\\Users\\\\Nico\\\\Desktop\\\\Nico\\\\JOSE\\\\Gestion de Obras\")",
+      "Bash(mkdir -p backend frontend)"
+    ]
+  }
+}

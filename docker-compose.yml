@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gestion_obras_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gestion_obras
+      POSTGRES_PASSWORD: gestion_obras
+      POSTGRES_DB: gestion_obras
+    ports:
+      - "55432:5432"
+    volumes:
+      - gestion_obras_pgdata:/var/lib/postgresql/data
+
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: gestion_obras_db_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gestion_obras
+      POSTGRES_PASSWORD: gestion_obras
+      POSTGRES_DB: gestion_obras_test
+    ports:
+      - "55433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
+volumes:
+  gestion_obras_pgdata:
