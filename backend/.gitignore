@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.test
+.env.local
+*.log
+
+/src/generated/prisma

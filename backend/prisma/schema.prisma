@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Rol {
+  admin
+  gerente
+  empleado
+}
+
+enum EstadoObra {
+  planificada
+  en_progreso
+  pausada
+  finalizada
+}
+
+enum CategoriaGasto {
+  materiales
+  mano_obra
+  equipos
+  servicios
+  otros
+}
+
+enum EstadoEmpleado {
+  activo
+  inactivo
+}
+
+enum EstadoQuincena {
+  pendiente
+  calculada
+  pagada
+}
+
+enum Prioridad {
+  baja
+  media
+  alta
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  nombre       String
+  rol          Rol      @default(empleado)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  obras       Obra[]
+  gastos      Gasto[]
+  horas       HoraTrabajada[]
+  anotaciones Anotacion[]
+
+  @@map("users")
+}
+
+model Obra {
+  id           String     @id @default(uuid())
+  nombre       String
+  descripcion  String?
+  fechaInicio  DateTime?  @map("fecha_inicio")
+  fechaFin     DateTime?  @map("fecha_fin")
+  estado       EstadoObra @default(planificada)
+  presupuesto  Float
+  userId       String     @map("user_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  user           User            @relation(fields: [userId], references: [id])
+  gastos         Gasto[]
+  empleadoObras  EmpleadoObra[]
+  horas          HoraTrabajada[]
+  anotaciones    Anotacion[]
+
+  @@map("obras")
+}
+
+model Gasto {
+  id        String         @id @default(uuid())
+  obraId    String         @map("obra_id")
+  monto     Float
+  categoria CategoriaGasto
+  detalle   String?
+  fecha     DateTime
+  userId    String         @map("user_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  obra Obra @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("gastos")
+}
+
+model Empleado {
+  id             String         @id @default(uuid())
+  nombre         String
+  email          String?        @unique
+  dni            String?        @unique
+  tarifaPorHora  Float          @map("tarifa_por_hora")
+  estado         EstadoEmpleado @default(activo)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  empleadoObras EmpleadoObra[]
+  horas         HoraTrabajada[]
+  quincenas     Quincena[]
+
+  @@map("empleados")
+}
+
+model EmpleadoObra {
+  id          String    @id @default(uuid())
+  empleadoId  String    @map("empleado_id")
+  obraId      String    @map("obra_id")
+  fechaInicio DateTime? @map("fecha_inicio")
+  fechaFin    DateTime? @map("fecha_fin")
+  rolEnObra   String?   @map("rol_en_obra")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  empleado Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  obra     Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+
+  @@unique([empleadoId, obraId])
+  @@map("empleado_obra")
+}
+
+model HoraTrabajada {
+  id         String   @id @default(uuid())
+  empleadoId String   @map("empleado_id")
+  obraId     String   @map("obra_id")
+  fecha      DateTime
+  horas      Float
+  detalle    String?
+  userId     String   @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  empleado Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  obra     Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("horas_trabajadas")
+}
+
+model Quincena {
+  id            String         @id @default(uuid())
+  empleadoId    String         @map("empleado_id")
+  fechaInicio   DateTime       @map("fecha_inicio")
+  fechaFin      DateTime       @map("fecha_fin")
+  horasTotales  Float          @map("horas_totales")
+  montoTotal    Float          @map("monto_total")
+  estado        EstadoQuincena @default(pendiente)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  empleado Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  @@unique([empleadoId, fechaInicio])
+  @@map("quincenas")
+}
+
+model Anotacion {
+  id          String    @id @default(uuid())
+  obraId      String    @map("obra_id")
+  titulo      String
+  descripcion String?
+  prioridad   Prioridad @default(media)
+  completada  Boolean   @default(false)
+  userId      String    @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  obra Obra @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("anotaciones")
+}
